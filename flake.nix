@@ -71,7 +71,7 @@
             ];
 
             ROCM_PATH = "${pkgs'.rocmPackages.clr}";
-            LD_LIBRARY_PATH = "${pkgs'.rocmPackages.clr}/lib";
+            #LD_LIBRARY_PATH = "${pkgs'.rocmPackages.clr}/lib";
             TORCH_DONT_CHECK_COMPILER_ABI = "TRUE";
             CPLUS_INCLUDE_PATH = "${pkgs.python3Packages.pybind11}/include:$CPLUS_INCLUDE_PATH";
           };
