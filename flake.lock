@@ -20,11 +20,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1771916909,
-        "narHash": "sha256-NOTVu+McGF1ZxyF/cMrd3MvYlEwOQFUlTT7jltZfLvc=",
+        "lastModified": 1772272386,
+        "narHash": "sha256-U2BDHe40sk8boIFbEK1DXqHTHV3Lu5IQH3Y0a+AoR6M=",
         "owner": "Wulfsta",
         "repo": "nixpkgs",
-        "rev": "d8a0d49a83f4481e8063a47a33983caee9c63616",
+        "rev": "2b475c5ac0b431d771e7a39ab8072d2a37acd07b",
         "type": "github"
       },
       "original": {
