@@ -70,9 +70,15 @@
               ))
             ];
 
+            # Add to path just to have
             ROCM_PATH = "${pkgs'.rocmPackages.clr}";
+            # Don't crash flash-attn because cuda isn't there
+            FLASH_ATTENTION_TRITON_AMD_ENABLE = "TRUE";
+            # fixed upstream, patch applied - keeping it commented so I recall it later
             #LD_LIBRARY_PATH = "${pkgs'.rocmPackages.clr}/lib";
+            # I don't remember why this is here but it was needed at some point
             TORCH_DONT_CHECK_COMPILER_ABI = "TRUE";
+            # Make sure pybind gets included in the path - this is llama.cpp related
             CPLUS_INCLUDE_PATH = "${pkgs.python3Packages.pybind11}/include:$CPLUS_INCLUDE_PATH";
           };
         };
