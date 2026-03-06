@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:Wulfsta/nixpkgs/vllm-gfx906";
+    nixpkgs.url = "github:Wulfsta/nixpkgs/gfx906-vllm-0.17";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
   };

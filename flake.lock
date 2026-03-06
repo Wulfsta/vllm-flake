@@ -20,16 +20,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1772415188,
-        "narHash": "sha256-70Q+tJMH6inpE2Cv7Vz8sY0BtS82MZjuz5G9Asouc+U=",
+        "lastModified": 1772738792,
+        "narHash": "sha256-TiPl9EKSoRvofC9ABqkHOrj3hxS1u4pkYSbrwNZ9y6s=",
         "owner": "Wulfsta",
         "repo": "nixpkgs",
-        "rev": "92f2cd53e68c3234ae9a42a23aa333e25967ed23",
+        "rev": "ccfdd0508c33a0a009967c3c28f202866f3eabde",
         "type": "github"
       },
       "original": {
         "owner": "Wulfsta",
-        "ref": "vllm-gfx906",
+        "ref": "gfx906-vllm-0.17",
         "repo": "nixpkgs",
         "type": "github"
       }
