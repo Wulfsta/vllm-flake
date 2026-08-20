@@ -11,3 +11,9 @@ You will need to specify the `TRITON_ATTN` attention backend to serve models, as
 ```
 vllm serve <model> --attention-backend TRITON_ATTN
 ```
+
+Sample command to test on a 16GiB card:
+
+```
+vllm serve --attention-backend TRITON_ATTN Qwen/Qwen3.5-4B --max-model-len 65536 --gpu-memory-utilization 0.95 --limit-mm-per-prompt '{"image": 0, "video": 0}'
+```
