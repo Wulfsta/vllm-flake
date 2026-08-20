@@ -1,5 +1,7 @@
 import torch
 from vllm import LLM, SamplingParams
+from vllm.config import AttentionConfig
+from vllm.v1.attention.backends.registry import AttentionBackendEnum
 
 
 def main():
@@ -20,7 +22,7 @@ def main():
     ]
     sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
 
-    llm = LLM(model="facebook/opt-125m")
+    llm = LLM(model="facebook/opt-125m", attention_config=AttentionConfig(backend=AttentionBackendEnum.TRITON_ATTN))
 
     outputs = llm.generate(prompts, sampling_params)
 

@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:Wulfsta/nixpkgs/gfx906-vllm-0.17";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
@@ -32,14 +32,14 @@
             };
             overlays = [
               (final: prev: {
-                rocmPackages = prev.rocmPackages.overrideScope (
-                  rocmFinal: rocmPrev: {
-                    clr = rocmPrev.clr.override {
-                      localGpuTargets = [
-                        "gfx906"
-                        "gfx908"
-                      ];
-                    };
+                python313Packages = prev.python313Packages.overrideScope (
+                  pyFinal: pyPrev: {
+                    vllm = pyPrev.vllm.overrideAttrs (old: {
+                      patches = (old.patches or [ ]) ++ [ ./vllm-gfx906-support.patch ];
+                    });
+                    triton = pyPrev.triton.overrideAttrs (old: {
+                      patches = (old.patches or [ ]) ++ [ ./triton-gfx906-support.patch ];
+                    });
                   }
                 );
               })
@@ -53,8 +53,8 @@
               rocmPackages.clr
               llama-cpp
               vllm
-              python3Packages.pybind11
-              (python3.withPackages (
+              python313Packages.pybind11
+              (python313.withPackages (
                 ps: with ps; [
                   matplotlib
                   numpy
@@ -73,13 +73,13 @@
             # Add to path just to have
             ROCM_PATH = "${pkgs'.rocmPackages.clr}";
             # Don't crash flash-attn because cuda isn't there
-            FLASH_ATTENTION_TRITON_AMD_ENABLE = "TRUE";
+            #FLASH_ATTENTION_TRITON_AMD_ENABLE = "TRUE";
             # fixed upstream, patch applied - keeping it commented so I recall it later
             #LD_LIBRARY_PATH = "${pkgs'.rocmPackages.clr}/lib";
             # I don't remember why this is here but it was needed at some point
             TORCH_DONT_CHECK_COMPILER_ABI = "TRUE";
             # Make sure pybind gets included in the path - this is llama.cpp related
-            CPLUS_INCLUDE_PATH = "${pkgs.python3Packages.pybind11}/include:$CPLUS_INCLUDE_PATH";
+            CPLUS_INCLUDE_PATH = "${pkgs.python313Packages.pybind11}/include:$CPLUS_INCLUDE_PATH";
           };
         };
     };
