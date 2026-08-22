@@ -33,18 +33,187 @@
             overlays = [
               (final: prev: {
                 python313Packages = prev.python313Packages.overrideScope (
-                  pyFinal: pyPrev: {
+                  (pyFinal: pyPrev: {
                     vllm = pyPrev.vllm.overrideAttrs (old: {
                       patches = (old.patches or [ ]) ++ [ ./vllm-gfx906-support.patch ];
                     });
+
                     triton = pyPrev.triton.overrideAttrs (old: {
                       patches = (old.patches or [ ]) ++ [ ./triton-gfx906-support.patch ];
                     });
-                  }
+                  })
                 );
+                pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+                  (pyFinal: pyPrev: {
+                    #TODO: clean this code up
+                    vllm-gguf-plugin =
+                      let
+                        # Use vendored CK as header only dep if rocmPackages' CK doesn't properly support targets
+                        vendorComposableKernel = !final.rocmPackages.composable_kernel.anyMfmaTarget;
+
+                        rocmtoolkit_joined = final.symlinkJoin {
+                          name = "rocm-merged";
+
+                          paths =
+                            with final.rocmPackages;
+                            [
+                              rocm-core
+                              clr
+                              rccl
+                              miopen
+                              aotriton
+                              rocrand
+                              rocblas
+                              rocsparse
+                              hipsparse
+                              rocthrust
+                              rocprim
+                              hipcub
+                              roctracer
+                              rocfft
+                              rocsolver
+                              hipfft
+                              hiprand
+                              hipsolver
+                              hipblas-common
+                              hipblas
+                              hipblaslt
+                              rocminfo
+                              rocm-comgr
+                              rocm-device-libs
+                              rocm-runtime
+                              rocm-smi
+                              clr.icd
+                              hipify
+                              rocprofiler-sdk
+                              rocprofiler-sdk.dev
+                              amdsmi
+                            ]
+                            ++ final.lib.optionals (!vendorComposableKernel) [
+                              composable_kernel
+                            ];
+
+                          # Fix `setuptools` not being found
+                          postBuild = ''
+                            rm -rf $out/nix-support
+                          '';
+                        };
+
+                        # header path ends up missing rocthrust & its deps
+                        rocmExtraIncludeFlags =
+                          final.lib.concatMapStringsSep " " (pkg: "-I${final.lib.getInclude pkg}/include")
+                            [
+                              final.rocmPackages.rocthrust
+                              final.rocmPackages.rocprim
+                              final.rocmPackages.hipcub
+                            ];
+                      in
+                      pyFinal.buildPythonPackage {
+                        pname = "vllm-gguf-plugin";
+                        version = "0.0.5";
+
+                        src = final.fetchFromGitHub {
+                          owner = "vllm-project";
+                          repo = "vllm-gguf-plugin";
+                          rev = "d358f564fc8f470cddd7c141a149b4ebafafa01f";
+                          hash = "sha256-WHeRs4uB2LQGW0HuShchPPCpm5TkOVxw90sY34KS49Y=";
+                        };
+
+                        format = "setuptools";
+
+                        build-system = [
+                          pyFinal.setuptools
+                          pyFinal.torch
+                        ];
+
+                        nativeBuildInputs = with final; [
+                          pkg-config
+                          rocmPackages.hipcc
+                        ];
+
+                        buildInputs =
+                          with final.rocmPackages;
+                          [
+                            rocm-core
+                            clr
+                            rccl
+                            miopen
+                            aotriton
+                            rocrand
+                            rocblas
+                            rocsparse
+                            hipsparse
+                            rocthrust
+                            rocprim
+                            hipcub
+                            roctracer
+                            rocfft
+                            rocsolver
+                            hipfft
+                            hiprand
+                            hipsolver
+                            hipblas-common
+                            hipblas
+                            hipblaslt
+                            rocminfo
+                            rocm-comgr
+                            rocm-device-libs
+                            rocm-runtime
+                            rocm-smi
+                            clr.icd
+                            hipify
+                            rocprofiler-sdk
+                            rocprofiler-sdk.dev
+                            amdsmi
+                          ]
+                          ++ final.lib.optionals (!vendorComposableKernel) [
+                            composable_kernel
+                          ];
+
+                        dependencies = with pyFinal; [
+                          gguf
+                          vllm
+                          torch
+                          # vLLM needs Torch's compiler to be present in order to use torch.compile
+                          torch.stdenv.cc
+                          huggingface-hub
+                          final.rocmPackages.rocminfo
+                        ];
+
+                        env = {
+                          HIPFLAGS = rocmExtraIncludeFlags;
+                          CFLAGS = rocmExtraIncludeFlags;
+                          CXXFLAGS = rocmExtraIncludeFlags;
+                          ROCM_PATH = rocmtoolkit_joined;
+                          ROCM_SOURCE_DIR = rocmtoolkit_joined;
+                          CMAKE_CXX_FLAGS = "-I${rocmtoolkit_joined}/include";
+                          PYTORCH_ROCM_ARCH = final.lib.strings.concatStringsSep ";" (
+                            final.rocmPackages.clr.localGpuTargets or final.rocmPackages.clr.gpuTargets
+                          );
+                        };
+                      };
+                  })
+                ];
               })
             ];
           };
+
+          vllmPluginEnv = pkgs'.python313.withPackages (ps: [
+            ps.vllm
+            ps.vllm-gguf-plugin
+          ]);
+
+          vllmWithGguf =
+            pkgs'.runCommand "vllm-with-gguf"
+              {
+                meta = (pkgs'.python313Packages.vllm.meta or { }) // {
+                  mainProgram = "vllm";
+                };
+              }
+              ''
+                mkdir -p $out/bin
+                ln -s ${vllmPluginEnv}/bin/vllm $out/bin/vllm
+              '';
         in
         {
           devShells.default = pkgs'.mkShell {
@@ -52,7 +221,7 @@
             buildInputs = with pkgs'; [
               rocmPackages.clr
               llama-cpp
-              vllm
+              #vllmWithGguf
               python313Packages.pybind11
               (python313.withPackages (
                 ps: with ps; [
@@ -66,6 +235,7 @@
                   tqdm
                   scipy
                   vllm
+                  vllm-gguf-plugin
                 ]
               ))
             ];
@@ -79,7 +249,7 @@
             # I don't remember why this is here but it was needed at some point
             TORCH_DONT_CHECK_COMPILER_ABI = "TRUE";
             # Make sure pybind gets included in the path - this is llama.cpp related
-            CPLUS_INCLUDE_PATH = "${pkgs.python313Packages.pybind11}/include:$CPLUS_INCLUDE_PATH";
+            CPLUS_INCLUDE_PATH = "${pkgs'.python313Packages.pybind11}/include:$CPLUS_INCLUDE_PATH";
           };
         };
     };
