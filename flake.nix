@@ -112,8 +112,8 @@
                         src = final.fetchFromGitHub {
                           owner = "vllm-project";
                           repo = "vllm-gguf-plugin";
-                          rev = "d358f564fc8f470cddd7c141a149b4ebafafa01f";
-                          hash = "sha256-WHeRs4uB2LQGW0HuShchPPCpm5TkOVxw90sY34KS49Y=";
+                          rev = "fb973ad784f38b98b054e136bec3414b7cd8494d";
+                          hash = "sha256-Hch2T7c123VH3NQFt0+gMKOFG7t7NtCk2xQEx3M4EsI=";
                         };
 
                         format = "setuptools";
@@ -126,6 +126,7 @@
                         nativeBuildInputs = with final; [
                           pkg-config
                           rocmPackages.hipcc
+                          ninja
                         ];
 
                         buildInputs =
@@ -176,6 +177,11 @@
                           huggingface-hub
                           final.rocmPackages.rocminfo
                         ];
+
+                        #TODO: This does not work to parallelize this build.
+                        preConfigure = ''
+                          export MAX_JOBS="$NIX_BUILD_CORES"
+                        '';
 
                         env = {
                           HIPFLAGS = rocmExtraIncludeFlags;
