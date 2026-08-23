@@ -32,7 +32,7 @@
             };
             overlays = [
               (final: prev: {
-                python313Packages = prev.python313Packages.overrideScope (
+                pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
                   (pyFinal: pyPrev: {
                     vllm = pyPrev.vllm.overrideAttrs (old: {
                       patches = (old.patches or [ ]) ++ [ ./vllm-gfx906-support.patch ];
@@ -41,10 +41,7 @@
                     triton = pyPrev.triton.overrideAttrs (old: {
                       patches = (old.patches or [ ]) ++ [ ./triton-gfx906-support.patch ];
                     });
-                  })
-                );
-                pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-                  (pyFinal: pyPrev: {
+
                     #TODO: clean this code up
                     vllm-gguf-plugin =
                       let
@@ -221,7 +218,7 @@
             buildInputs = with pkgs'; [
               rocmPackages.clr
               llama-cpp
-              #vllmWithGguf
+              vllmWithGguf
               python313Packages.pybind11
               (python313.withPackages (
                 ps: with ps; [
