@@ -27,5 +27,10 @@ vllm serve --attention-backend TRITON_ATTN unsloth/Qwen3.8-27B-GGUF:UD-Q3_K_XL -
 A more reasonable quant of the above model with more context on llama.cpp (running only slightly slower):
 
 ```
-llama-server --hf-repo unsloth/Qwen3.8-27B-GGUF:UD-IQ4_XS -c 65536 -ngl 99 --fit off -ot 'blk.([0-9]|1[0-9]|2[01]).ffn_(gate|up).*=CPU' -ctk q4_0 -ctv q4_0
+llama-server --hf-repo unsloth/Qwen3.8-27B-GGUF:UD-IQ4_XS -c 65536 -ngl 99 --fit off -ot 'blk.([0-9]|1[0-9]|2[01]).ffn_(gate|up).*=CPU' -ctk q4_0 -ctv q4_0 -b 128 -ub 64 --spec-type draft-mtp --spec-draft-n-max 2 --no-mmproj-offload --no-mmap --backend-sampling -np 2 --port 8000
+```
+
+Or, the fastest option:
+```
+llama-server --hf-repo unsloth/Qwen3.8-27B-GGUF:UD-Q3_K_XL -c 65536 -ngl 99 --fit off -ctk q8_0 -ctv q8_0 -b 128 -ub 64 --spec-type draft-mtp --spec-draft-n-max 2 --no-mmproj-offload --no-mmap --backend-sampling -np 2 --port 8000
 ```
