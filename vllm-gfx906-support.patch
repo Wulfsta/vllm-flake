@@ -1,17 +1,18 @@
 diff --git a/csrc/rocm/skinny_gemms.cu b/csrc/rocm/skinny_gemms.cu
-index 10e3cbf2e0..3da5b386ce 100644
+index 10e3cbf2e0..bd5b0748c4 100644
 --- a/csrc/rocm/skinny_gemms.cu
 +++ b/csrc/rocm/skinny_gemms.cu
-@@ -22,7 +22,7 @@
+@@ -22,7 +22,8 @@
  // However, it may be possible to fix these kernels to handle both issues.
  
  #if defined(__HIPCC__) && \
 -    (defined(__gfx90a__) || defined(__gfx942__) || defined(__gfx950__))
-+    (defined(__gfx906__) || defined(__gfx90a__) || defined(__gfx942__) || defined(__gfx950__))
++    (defined(__gfx906__) || defined(__gfx908__) || defined(__gfx90a__) || \
++     defined(__gfx942__) || defined(__gfx950__))
    #define __HIP__GFX9__
  #endif
  
-@@ -307,12 +307,21 @@ torch::Tensor LLMM1(at::Tensor& in_a, at::Tensor& in_b,
+@@ -307,12 +308,21 @@ torch::Tensor LLMM1(at::Tensor& in_a, at::Tensor& in_b,
    return out_c;
  }
  
@@ -37,15 +38,21 @@ index 10e3cbf2e0..3da5b386ce 100644
        float2 s = __bfloat1622float2(*((__hip_bfloat162*)(&(V2)))) *  \
                   __bfloat1622float2(*((__hip_bfloat162*)(&(V3))));   \
 diff --git a/vllm/platforms/rocm.py b/vllm/platforms/rocm.py
-index 04c1acbb2b..350f697d5c 100644
+index 04c1acbb2b..274690fa6c 100644
 --- a/vllm/platforms/rocm.py
 +++ b/vllm/platforms/rocm.py
-@@ -214,7 +214,7 @@ _ON_GFX1100 = "gfx1100" in _GCN_ARCH
+@@ -214,7 +214,13 @@ _ON_GFX1100 = "gfx1100" in _GCN_ARCH
  _ON_GFX1151 = "gfx1151" in _GCN_ARCH
  _ON_GFX12X = any(arch in _GCN_ARCH for arch in ["gfx12"])
  _ON_MI3XX = any(arch in _GCN_ARCH for arch in ["gfx942", "gfx950"])
 -_ON_GFX9 = any(arch in _GCN_ARCH for arch in ["gfx90a", "gfx942", "gfx950"])
-+_ON_GFX9 = any(arch in _GCN_ARCH for arch in ["gfx906", "gfx90a", "gfx942", "gfx950"])
++_ON_GFX9 = any(arch in _GCN_ARCH for arch in [
++    "gfx906",
++    "gfx908",
++    "gfx90a",
++    "gfx942",
++    "gfx950"
++])
  _ON_GFX90A = "gfx90a" in _GCN_ARCH
  _ON_GFX942 = "gfx942" in _GCN_ARCH
  _ON_GFX950 = "gfx950" in _GCN_ARCH
